@@ -1,0 +1,35 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: grafana
+  namespace: kube-system
+spec:
+  chart: https://github.com/grafana/helm-charts/releases/download/grafana-6.43.5/grafana-6.43.5.tgz
+  targetNamespace: default
+  set:
+    adminPassword: "grafana"
+  valuesContent: |-
+    env:
+      GF_EXPLORE_ENABLED: true
+    adminUser: admin
+    sidecar:
+      datasources:
+        enabled: true
+    grafana.ini:
+      security:
+        allow_embedding: true
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: grafana
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`grafana.test.info`)
+      kind: Rule
+      services:
+        - name: grafana
+          port: 80

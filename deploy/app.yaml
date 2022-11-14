@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ory-spa
+  namespace: default
+  labels:
+    app.kubernetes.io/name: ory-spa
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ory-spa
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ory-spa
+    spec:
+      containers:
+        - name: ory-spa-ui
+          image: "ory-react-spa:0.0.1"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: VITE_ORY_SDK_URL
+              value: http://192.168.28.42:4000
+          ports:
+            - name: ory-spa
+              containerPort: 3000
+              protocol: TCP
+---              
+# Source: kratos/templates/service-admin.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: ory-spa
+  namespace: default
+  labels:
+    app.kubernetes.io/name: ory-spa
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: ory-spa
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: ory-spa
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ory-spa
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`ory.test.info`)
+      kind: Rule
+      services:
+        - name: ory-spa
+          port: 80
